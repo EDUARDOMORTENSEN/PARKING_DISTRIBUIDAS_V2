@@ -64,7 +64,7 @@ class Settings(BaseSettings):
     AUDIT_ROUTING_KEY: str = "audit.event"
 
     # ---------- Timeouts de clients HTTP ----------
-    HTTP_CLIENT_TIMEOUT: float = 5.0
+    HTTP_CLIENT_TIMEOUT: float = 15.0
 
 
 @lru_cache

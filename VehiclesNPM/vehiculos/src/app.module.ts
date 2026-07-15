@@ -25,7 +25,7 @@ import { AuthModule } from './auth/auth.module';
         password: configService.get('DB_CONTRASENA'),
         database: configService.get('DB_NOMBRE'),
         entities:[Vehiculo, Auto, Motocicleta, Camioneta],
-        synchronize: false,
+        synchronize: true,
         logging: false,
         ssl: false,
       

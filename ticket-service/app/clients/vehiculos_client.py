@@ -10,7 +10,7 @@ from app.utils.tarifas import mapear_categoria_vehiculo
 
 class VehiculosClient(BaseHttpClient):
     def __init__(self):
-        super().__init__(base_url=settings.VEHICULOS_URL)
+        super().__init__(base_url=settings.VEHICULOS_URL, timeout=settings.HTTP_CLIENT_TIMEOUT)
 
     async def obtener_vehiculo(self, placa: str, token: str | None = None) -> dict | None:
         """GatewayController expone GET /vehiculos/:placa — por PLACA,

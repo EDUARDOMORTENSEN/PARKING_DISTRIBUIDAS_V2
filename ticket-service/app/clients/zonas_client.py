@@ -10,7 +10,7 @@ from app.utils.tarifas import mapear_categoria_zona
 
 class ZonasClient(BaseHttpClient):
     def __init__(self):
-        super().__init__(base_url=settings.ZONAS_URL)
+        super().__init__(base_url=settings.ZONAS_URL, timeout=settings.HTTP_CLIENT_TIMEOUT)
         self._zonas_cache: list[dict] | None = None
         self._zonas_cache_expira: datetime | None = None
         self._ZONAS_CACHE_TTL = timedelta(minutes=5)

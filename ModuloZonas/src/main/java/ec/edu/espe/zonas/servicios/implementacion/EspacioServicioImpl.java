@@ -15,6 +15,7 @@ import ec.edu.espe.zonas.datos.dtos.EventoAuditoria;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -187,6 +188,7 @@ public class EspacioServicioImpl implements EspacioServicio {
     }
 
     @Override
+    @Transactional
     public EspacioResponseDTO actualizarEstado(UUID idEspacio, EstadoEspacio estado) {
         if(estado == null || idEspacio == null) return null;
 

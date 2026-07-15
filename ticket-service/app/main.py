@@ -6,6 +6,7 @@ from fastapi.security import HTTPBearer
 
 from app.api.v1.router import api_router
 from app.core.config import settings
+from app.sse.sse_router import router as sse_router
 from app.utils.exceptions import (
     EspacioNoDisponibleException,
     EspacioOcupadoException,
@@ -85,6 +86,7 @@ app = FastAPI(
 )
 
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(sse_router)
 app.add_middleware(AuditMiddleware)
 
 

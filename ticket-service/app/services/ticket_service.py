@@ -16,6 +16,7 @@ from app.utils.exceptions import (
     VehiculoNoEncontradoException,
 )
 from app.utils.rabbitmq_publisher import rabbitmq_publisher
+from app.sse.sse_service import sse_service
 
 
 class TicketService:
@@ -70,10 +71,9 @@ class TicketService:
             tarifa_hora_aplicada=tarifa_hora,
         )
         ticket_creado = await self.ticket_repository.create(nuevo_ticket)
-        # Emitir evento a RabbitMQ (Outbox Pattern)
-        await rabbitmq_publisher.publish_ticket_event(
-            "created", 
-            {"id_espacio": str(data.id_espacio), "estado": "OCUPADO"}
+        # Emitir evento a RabbitMQ (Outbox Pattern) y a los clientes conectados por SSE
+        await self._emitir_evento_espacio(
+            "created", data.id_espacio, "OCUPADO"
         )
         return ticket_creado
 
@@ -99,10 +99,9 @@ class TicketService:
         ticket.estado_ticket = EstadoTicket.PAGADO
 
         ticket_actualizado = await self.ticket_repository.update(ticket)
-        # Emitir evento a RabbitMQ para liberar espacio
-        await rabbitmq_publisher.publish_ticket_event(
-            "salida_registrada", 
-            {"id_espacio": str(ticket.id_espacio), "estado": "DISPONIBLE"}
+        # Emitir evento a RabbitMQ para liberar espacio y notificar por SSE
+        await self._emitir_evento_espacio(
+            "salida_registrada", ticket.id_espacio, "DISPONIBLE"
         )
         return ticket_actualizado
 
@@ -119,10 +118,9 @@ class TicketService:
 
         ticket.estado_ticket = EstadoTicket.ANULADO
         ticket_actualizado = await self.ticket_repository.update(ticket)
-        # Emitir evento a RabbitMQ para liberar espacio
-        await rabbitmq_publisher.publish_ticket_event(
-            "anulado", 
-            {"id_espacio": str(ticket.id_espacio), "estado": "DISPONIBLE"}
+        # Emitir evento a RabbitMQ para liberar espacio y notificar por SSE
+        await self._emitir_evento_espacio(
+            "anulado", ticket.id_espacio, "DISPONIBLE"
         )
         return ticket_actualizado
 
@@ -130,6 +128,14 @@ class TicketService:
         return await self._get_ticket_o_falla(id_ticket)
 
     # ---------- helpers privados ----------
+
+    @staticmethod
+    async def _emitir_evento_espacio(
+        event_type: str, id_espacio: uuid.UUID, estado: str
+    ) -> None:
+        payload = {"id_espacio": str(id_espacio), "estado": estado}
+        await rabbitmq_publisher.publish_ticket_event(event_type, payload)
+        await sse_service.emit_event(event_type, payload)
 
     async def _get_ticket_o_falla(self, id_ticket: uuid.UUID) -> Ticket:
         ticket = await self.ticket_repository.get_by_id(id_ticket)

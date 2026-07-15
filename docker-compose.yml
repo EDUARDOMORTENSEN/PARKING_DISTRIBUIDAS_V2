@@ -320,6 +320,11 @@ services:
       KONG_ADMIN_ERROR_LOG: /dev/stderr
       KONG_ADMIN_LISTEN: 0.0.0.0:8001
       KONG_UNTRUSTED_LUA_SANDBOX_REQUIRES: resty.http,cjson.safe
+      # Por defecto Kong lanza un worker por CPU (16 en esta máquina) y cada
+      # uno resuelve DNS de los hostnames de docker-compose por separado la
+      # primera vez que los usa (~6-7s de latencia fría). Con menos workers
+      # se "calienta" la caché de DNS de todos mucho más rápido.
+      KONG_NGINX_WORKER_PROCESSES: "2"
     ports:
       - "8000:8000"   # Proxy — único punto de entrada público
       - "8001:8001"   # Admin API

@@ -51,7 +51,14 @@ services:
 
               local method = kong.request.get_method()
               if method == "OPTIONS" then
-                return kong.response.exit(204, "")
+                local origin = kong.request.get_header("Origin")
+                return kong.response.exit(204, "", {
+                  ["Access-Control-Allow-Origin"] = origin,
+                  ["Access-Control-Allow-Credentials"] = "true",
+                  ["Access-Control-Allow-Methods"] = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                  ["Access-Control-Allow-Headers"] = "Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Auth-Token,Authorization",
+                  ["Access-Control-Max-Age"] = "3600",
+                })
               end
               local path = kong.request.get_path()
 
@@ -143,7 +150,14 @@ services:
 
               local method = kong.request.get_method()
               if method == "OPTIONS" then
-                return kong.response.exit(204, "")
+                local origin = kong.request.get_header("Origin")
+                return kong.response.exit(204, "", {
+                  ["Access-Control-Allow-Origin"] = origin,
+                  ["Access-Control-Allow-Credentials"] = "true",
+                  ["Access-Control-Allow-Methods"] = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                  ["Access-Control-Allow-Headers"] = "Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Auth-Token,Authorization",
+                  ["Access-Control-Max-Age"] = "3600",
+                })
               end
               local path = kong.request.get_path()
 
@@ -224,7 +238,14 @@ services:
 
               local method = kong.request.get_method()
               if method == "OPTIONS" then
-                return kong.response.exit(204, "")
+                local origin = kong.request.get_header("Origin")
+                return kong.response.exit(204, "", {
+                  ["Access-Control-Allow-Origin"] = origin,
+                  ["Access-Control-Allow-Credentials"] = "true",
+                  ["Access-Control-Allow-Methods"] = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                  ["Access-Control-Allow-Headers"] = "Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Auth-Token,Authorization",
+                  ["Access-Control-Max-Age"] = "3600",
+                })
               end
               local path = kong.request.get_path()
 
@@ -305,7 +326,14 @@ services:
 
               local method = kong.request.get_method()
               if method == "OPTIONS" then
-                return kong.response.exit(204, "")
+                local origin = kong.request.get_header("Origin")
+                return kong.response.exit(204, "", {
+                  ["Access-Control-Allow-Origin"] = origin,
+                  ["Access-Control-Allow-Credentials"] = "true",
+                  ["Access-Control-Allow-Methods"] = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                  ["Access-Control-Allow-Headers"] = "Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Auth-Token,Authorization",
+                  ["Access-Control-Max-Age"] = "3600",
+                })
               end
               local path = kong.request.get_path()
 
@@ -385,7 +413,14 @@ services:
 
               local method = kong.request.get_method()
               if method == "OPTIONS" then
-                return kong.response.exit(204, "")
+                local origin = kong.request.get_header("Origin")
+                return kong.response.exit(204, "", {
+                  ["Access-Control-Allow-Origin"] = origin,
+                  ["Access-Control-Allow-Credentials"] = "true",
+                  ["Access-Control-Allow-Methods"] = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                  ["Access-Control-Allow-Headers"] = "Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Auth-Token,Authorization",
+                  ["Access-Control-Max-Age"] = "3600",
+                })
               end
               local path = kong.request.get_path()
 
@@ -470,7 +505,14 @@ services:
 
               local method = kong.request.get_method()
               if method == "OPTIONS" then
-                return kong.response.exit(204, "")
+                local origin = kong.request.get_header("Origin")
+                return kong.response.exit(204, "", {
+                  ["Access-Control-Allow-Origin"] = origin,
+                  ["Access-Control-Allow-Credentials"] = "true",
+                  ["Access-Control-Allow-Methods"] = "GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS",
+                  ["Access-Control-Allow-Headers"] = "Accept,Accept-Version,Content-Length,Content-MD5,Content-Type,Date,X-Auth-Token,Authorization",
+                  ["Access-Control-Max-Age"] = "3600",
+                })
               end
               local path = kong.request.get_path()
 

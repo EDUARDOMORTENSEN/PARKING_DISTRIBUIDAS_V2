@@ -1,0 +1,537 @@
+_format_version: "3.0"
+
+# El plugin de CORS se mantiene global para que aplique a todo (API y Docs)
+plugins:
+  - name: cors
+    config:
+      origins:
+        - "http://localhost:8081"
+      methods:
+        - GET
+        - HEAD
+        - PUT
+        - PATCH
+        - POST
+        - DELETE
+        - OPTIONS
+      headers:
+        - Accept
+        - Accept-Version
+        - Content-Length
+        - Content-MD5
+        - Content-Type
+        - Date
+        - X-Auth-Token
+        - Authorization
+      exposed_headers:
+        - X-Auth-Token
+      credentials: true
+      max_age: 3600
+
+services:
+  # ==========================================
+  # SERVICIO ZONAS (API Protegida)
+  # ==========================================
+  - name: zonas-espacios-service
+    url: http://zonas:8080
+    routes:
+      - name: zonas-espacios-route
+        paths:
+          - /api/v1/zonas
+          - /api/v1/espacios
+        strip_path: false
+    plugins:
+      - name: pre-function
+        config:
+          access:
+            - |
+              local http = require "resty.http"
+              local cjson = require "cjson.safe"
+              local httpc = http.new()
+
+              local method = kong.request.get_method()
+              if method == "OPTIONS" then
+                return kong.response.exit(204, "")
+              end
+              local path = kong.request.get_path()
+
+              local public_paths = {
+                { path = "^/api/usuarios/auth/login", method = "POST" },
+                { path = "^/api/usuarios/auth/refresh", method = "POST" },
+                { path = "^/api/usuarios/auth/jwks", method = "GET" },
+                { path = "^/api/usuarios/personas/?$", method = "POST" },
+                { path = "^/api/gateway/vehiculos/", method = "GET" },
+                { path = "^/api/gateway/ingresos", method = "POST" },
+                { path = "^/api/gateway/salidas", method = "POST" }
+              }
+              for _, p in ipairs(public_paths) do
+                if string.match(path, p.path) and method == p.method then
+                  return
+                end
+              end
+
+              local auth_header = kong.request.get_header("Authorization")
+              if not auth_header then
+                return kong.response.exit(401, { message = "Falta el header Authorization" })
+              end
+              
+              local res, err = httpc:request_uri("http://gestion-usuarios:3001/api/usuarios/auth/validate", {
+                method = "GET",
+                headers = {
+                  ["Authorization"] = auth_header,
+                  ["X-Original-Method"] = method,
+                  ["X-Original-Path"] = path,
+                },
+                timeout = 3000,
+              })
+
+              if not res then
+                kong.log.err("auth-validate error: ", err)
+                return kong.response.exit(502, { message = "No se pudo validar la identidad" })
+              end
+
+              if res.status ~= 200 then
+                return kong.response.exit(res.status, res.body)
+              end
+
+              local user = cjson.decode(res.body)
+              if user then
+                kong.service.request.set_header("X-User-Id", tostring(user.userId or ""))
+                kong.service.request.set_header("X-User-Username", tostring(user.username or ""))
+                kong.service.request.set_header("X-User-Roles", table.concat(user.roles or {}, ","))
+                kong.service.request.set_header("X-User-Permissions", table.concat(user.permissions or {}, ","))
+              end
+
+  # Docs Zonas (Público — se elimina Authorization para evitar que Spring Security
+  # intente validar el JWT en el endpoint de docs)
+  - name: zonas-docs-service
+    url: http://zonas:8080/v3/api-docs
+    routes:
+      - name: zonas-docs-route
+        paths:
+          - /docs/zonas
+        strip_path: true
+    plugins:
+      - name: request-transformer
+        config:
+          remove:
+            headers:
+              - Authorization
+
+  # ==========================================
+  # SERVICIO VEHICULOS (API Protegida)
+  # ==========================================
+  - name: vehiculos-service
+    url: http://vehiculos:3000
+    routes:
+      - name: vehiculos-route
+        paths:
+          - /api/vehiculos
+        strip_path: false
+      - name: vehiculos-gateway-route
+        paths:
+          - /api/gateway
+        strip_path: false
+    plugins:
+      - name: pre-function
+        config:
+          access:
+            - |
+              local http = require "resty.http"
+              local cjson = require "cjson.safe"
+              local httpc = http.new()
+
+              local method = kong.request.get_method()
+              if method == "OPTIONS" then
+                return kong.response.exit(204, "")
+              end
+              local path = kong.request.get_path()
+
+              local public_paths = {
+                { path = "^/api/usuarios/auth/login", method = "POST" },
+                { path = "^/api/usuarios/auth/refresh", method = "POST" },
+                { path = "^/api/usuarios/auth/jwks", method = "GET" },
+                { path = "^/api/usuarios/personas/?$", method = "POST" },
+                { path = "^/api/gateway/vehiculos/", method = "GET" },
+                { path = "^/api/gateway/ingresos", method = "POST" },
+                { path = "^/api/gateway/salidas", method = "POST" }
+              }
+              for _, p in ipairs(public_paths) do
+                if string.match(path, p.path) and method == p.method then
+                  return
+                end
+              end
+
+              local auth_header = kong.request.get_header("Authorization")
+              if not auth_header then
+                return kong.response.exit(401, { message = "Falta el header Authorization" })
+              end
+              
+              local res, err = httpc:request_uri("http://gestion-usuarios:3001/api/usuarios/auth/validate", {
+                method = "GET",
+                headers = {
+                  ["Authorization"] = auth_header,
+                  ["X-Original-Method"] = method,
+                  ["X-Original-Path"] = path,
+                },
+                timeout = 3000,
+              })
+
+              if not res then
+                kong.log.err("auth-validate error: ", err)
+                return kong.response.exit(502, { message = "No se pudo validar la identidad" })
+              end
+
+              if res.status ~= 200 then
+                return kong.response.exit(res.status, res.body)
+              end
+
+              local user = cjson.decode(res.body)
+              if user then
+                kong.service.request.set_header("X-User-Id", tostring(user.userId or ""))
+                kong.service.request.set_header("X-User-Username", tostring(user.username or ""))
+                kong.service.request.set_header("X-User-Roles", table.concat(user.roles or {}, ","))
+                kong.service.request.set_header("X-User-Permissions", table.concat(user.permissions or {}, ","))
+              end
+
+  # Docs Vehículos (Público, sin bloque de plugins)
+  - name: vehiculos-docs-service
+    url: http://vehiculos:3000/api/vehiculos/docs-json
+    routes:
+      - name: vehiculos-docs-route
+        paths:
+          - /docs/vehiculos
+        strip_path: true
+
+  # ==========================================
+  # SERVICIO USUARIOS (API Protegida)
+  # ==========================================
+  - name: gestion-usuarios-service
+    url: http://gestion-usuarios:3001
+    routes:
+      - name: gestion-usuarios-route
+        paths:
+          - /api/usuarios
+        strip_path: false
+    plugins:
+      - name: pre-function
+        config:
+          access:
+            - |
+              local http = require "resty.http"
+              local cjson = require "cjson.safe"
+              local httpc = http.new()
+
+              local method = kong.request.get_method()
+              if method == "OPTIONS" then
+                return kong.response.exit(204, "")
+              end
+              local path = kong.request.get_path()
+
+              local public_paths = {
+                { path = "^/api/usuarios/auth/login", method = "POST" },
+                { path = "^/api/usuarios/auth/refresh", method = "POST" },
+                { path = "^/api/usuarios/auth/jwks", method = "GET" },
+                { path = "^/api/usuarios/personas/?$", method = "POST" },
+                { path = "^/api/gateway/vehiculos/", method = "GET" },
+                { path = "^/api/gateway/ingresos", method = "POST" },
+                { path = "^/api/gateway/salidas", method = "POST" }
+              }
+              for _, p in ipairs(public_paths) do
+                if string.match(path, p.path) and method == p.method then
+                  return
+                end
+              end
+
+              local auth_header = kong.request.get_header("Authorization")
+              if not auth_header then
+                return kong.response.exit(401, { message = "Falta el header Authorization" })
+              end
+              
+              local res, err = httpc:request_uri("http://gestion-usuarios:3001/api/usuarios/auth/validate", {
+                method = "GET",
+                headers = {
+                  ["Authorization"] = auth_header,
+                  ["X-Original-Method"] = method,
+                  ["X-Original-Path"] = path,
+                },
+                timeout = 3000,
+              })
+
+              if not res then
+                kong.log.err("auth-validate error: ", err)
+                return kong.response.exit(502, { message = "No se pudo validar la identidad" })
+              end
+
+              if res.status ~= 200 then
+                return kong.response.exit(res.status, res.body)
+              end
+
+              local user = cjson.decode(res.body)
+              if user then
+                kong.service.request.set_header("X-User-Id", tostring(user.userId or ""))
+                kong.service.request.set_header("X-User-Username", tostring(user.username or ""))
+                kong.service.request.set_header("X-User-Roles", table.concat(user.roles or {}, ","))
+                kong.service.request.set_header("X-User-Permissions", table.concat(user.permissions or {}, ","))
+              end
+
+# Docs Usuarios (Público — apunta al endpoint JSON real de NestJS Swagger)
+  - name: gestion-usuarios-docs-service
+
+    url: http://gestion-usuarios:3001/api/usuarios/docs-json
+    routes:
+      - name: gestion-usuarios-docs-route
+        paths:
+          - /docs/usuarios
+        strip_path: true
+# ==========================================
+  # SERVICIO TICKETS (API Protegida)
+  # ==========================================
+  - name: ticket-service
+    url: http://ticket-service:8002
+    routes:
+      - name: ticket-service-route
+        paths:
+          - /api/v1/tickets
+        strip_path: false
+    plugins:
+      - name: pre-function
+        config:
+          access:
+            - |
+              local http = require "resty.http"
+              local cjson = require "cjson.safe"
+              local httpc = http.new()
+
+              local method = kong.request.get_method()
+              if method == "OPTIONS" then
+                return kong.response.exit(204, "")
+              end
+              local path = kong.request.get_path()
+
+              local public_paths = {
+                { path = "^/api/usuarios/auth/login", method = "POST" },
+                { path = "^/api/usuarios/auth/refresh", method = "POST" },
+                { path = "^/api/usuarios/auth/jwks", method = "GET" },
+                { path = "^/api/usuarios/personas/?$", method = "POST" },
+                { path = "^/api/gateway/vehiculos/", method = "GET" },
+                { path = "^/api/gateway/ingresos", method = "POST" },
+                { path = "^/api/gateway/salidas", method = "POST" }
+              }
+              for _, p in ipairs(public_paths) do
+                if string.match(path, p.path) and method == p.method then
+                  return
+                end
+              end
+
+              local auth_header = kong.request.get_header("Authorization")
+              if not auth_header then
+                return kong.response.exit(401, { message = "Falta el header Authorization" })
+              end
+              
+              local res, err = httpc:request_uri("http://gestion-usuarios:3001/api/usuarios/auth/validate", {
+                method = "GET",
+                headers = {
+                  ["Authorization"] = auth_header,
+                  ["X-Original-Method"] = method,
+                  ["X-Original-Path"] = path,
+                },
+                timeout = 3000,
+              })
+
+              if not res then
+                kong.log.err("auth-validate error: ", err)
+                return kong.response.exit(502, { message = "No se pudo validar la identidad" })
+              end
+
+              if res.status ~= 200 then
+                return kong.response.exit(res.status, res.body)
+              end
+
+              local user = cjson.decode(res.body)
+              if user then
+                kong.service.request.set_header("X-User-Id", tostring(user.userId or ""))
+                kong.service.request.set_header("X-User-Username", tostring(user.username or ""))
+                kong.service.request.set_header("X-User-Roles", table.concat(user.roles or {}, ","))
+                kong.service.request.set_header("X-User-Permissions", table.concat(user.permissions or {}, ","))
+              end
+
+  # Docs Tickets (Público, sin bloque de plugins)
+  - name: ticket-docs-service
+    url: http://ticket-service:8002/openapi.json
+    routes:
+      - name: ticket-docs-route
+        paths:
+          - /docs/tickets
+        strip_path: true
+  # ==========================================
+  # SERVICIO ASIGNACIONES (API Protegida)
+  # ==========================================
+  - name: assignment-service
+    url: http://assignment-service:3002
+    routes:
+      - name: asignaciones-route
+        paths:
+          - /api/asignaciones
+        strip_path: false
+    plugins:
+      - name: pre-function
+        config:
+          access:
+            - |
+              local http = require "resty.http"
+              local cjson = require "cjson.safe"
+              local httpc = http.new()
+
+              local method = kong.request.get_method()
+              if method == "OPTIONS" then
+                return kong.response.exit(204, "")
+              end
+              local path = kong.request.get_path()
+
+              local public_paths = {
+                { path = "^/api/usuarios/auth/login", method = "POST" },
+                { path = "^/api/usuarios/auth/refresh", method = "POST" },
+                { path = "^/api/usuarios/auth/jwks", method = "GET" },
+                { path = "^/api/usuarios/personas/?$", method = "POST" },
+                { path = "^/api/gateway/vehiculos/", method = "GET" },
+                { path = "^/api/gateway/ingresos", method = "POST" },
+                { path = "^/api/gateway/salidas", method = "POST" }
+              }
+              for _, p in ipairs(public_paths) do
+                if string.match(path, p.path) and method == p.method then
+                  return
+                end
+              end
+
+              local auth_header = kong.request.get_header("Authorization")
+              if not auth_header then
+                return kong.response.exit(401, { message = "Falta el header Authorization" })
+              end
+              
+              local res, err = httpc:request_uri("http://gestion-usuarios:3001/api/usuarios/auth/validate", {
+                method = "GET",
+                headers = {
+                  ["Authorization"] = auth_header,
+                  ["X-Original-Method"] = method,
+                  ["X-Original-Path"] = path,
+                },
+                timeout = 3000,
+              })
+
+              if not res then
+                kong.log.err("auth-validate error: ", err)
+                return kong.response.exit(502, { message = "No se pudo validar la identidad" })
+              end
+
+              if res.status ~= 200 then
+                return kong.response.exit(res.status, res.body)
+              end
+
+              local user = cjson.decode(res.body)
+              if user then
+                kong.service.request.set_header("X-User-Id", tostring(user.userId or ""))
+                kong.service.request.set_header("X-User-Username", tostring(user.username or ""))
+                kong.service.request.set_header("X-User-Roles", table.concat(user.roles or {}, ","))
+                kong.service.request.set_header("X-User-Permissions", table.concat(user.permissions or {}, ","))
+              end
+
+  # Docs Asignaciones (Público, sin bloque de plugins)
+  - name: assignment-docs-service
+    url: http://assignment-service:3002/api/asignaciones/docs-json
+    routes:
+      - name: assignment-docs-route
+        paths:
+          - /docs/asignaciones
+        strip_path: true
+
+  # ==========================================
+  # SERVICIO AUDITORIA (API Protegida)
+  # ==========================================
+  - name: audit-service
+    url: http://audit-service:3003
+    routes:
+      - name: audit-service-route
+        paths:
+          - /api/v1/audit
+        strip_path: false
+      - name: auditoria-route
+        paths:
+          - /api/auditoria
+        strip_path: false
+    plugins:
+      - name: pre-function
+        config:
+          access:
+            - |
+              local http = require "resty.http"
+              local cjson = require "cjson.safe"
+              local httpc = http.new()
+
+              local method = kong.request.get_method()
+              if method == "OPTIONS" then
+                return kong.response.exit(204, "")
+              end
+              local path = kong.request.get_path()
+
+              local public_paths = {
+                { path = "^/api/usuarios/auth/login", method = "POST" },
+                { path = "^/api/usuarios/auth/refresh", method = "POST" },
+                { path = "^/api/usuarios/auth/jwks", method = "GET" },
+                { path = "^/api/usuarios/personas/?$", method = "POST" },
+                { path = "^/api/gateway/vehiculos/", method = "GET" },
+                { path = "^/api/gateway/ingresos", method = "POST" },
+                { path = "^/api/gateway/salidas", method = "POST" }
+              }
+              for _, p in ipairs(public_paths) do
+                if string.match(path, p.path) and method == p.method then
+                  return
+                end
+              end
+
+              local auth_header = kong.request.get_header("Authorization")
+              if not auth_header then
+                return kong.response.exit(401, { message = "Falta el header Authorization" })
+              end
+              
+              local res, err = httpc:request_uri("http://gestion-usuarios:3001/api/usuarios/auth/validate", {
+                method = "GET",
+                headers = {
+                  ["Authorization"] = auth_header,
+                  ["X-Original-Method"] = method,
+                  ["X-Original-Path"] = path,
+                },
+                timeout = 3000,
+              })
+
+              if not res then
+                kong.log.err("auth-validate error: ", err)
+                return kong.response.exit(502, { message = "No se pudo validar la identidad" })
+              end
+
+              if res.status ~= 200 then
+                return kong.response.exit(res.status, res.body)
+              end
+
+              local user = cjson.decode(res.body)
+              if user then
+                kong.service.request.set_header("X-User-Id", tostring(user.userId or ""))
+                kong.service.request.set_header("X-User-Username", tostring(user.username or ""))
+                kong.service.request.set_header("X-User-Roles", table.concat(user.roles or {}, ","))
+                kong.service.request.set_header("X-User-Permissions", table.concat(user.permissions or {}, ","))
+              end
+
+  # Docs Auditoria (Público, sin bloque de plugins)
+  - name: audit-docs-service
+    url: http://audit-service:3003/api/auditoria/docs-json
+    routes:
+      - name: audit-docs-route
+        paths:
+          - /docs/auditoria
+        strip_path: true
+
+# Consumer autorizado a llamar /api/vehiculos y /api/gateway.
+consumers:
+  - username: sistema-tickets
+    keyauth_credentials:
+      - key: a387bf883d646b96d8e48490c2e6329da7258548a2d16c1f45f39ecbef7031d7

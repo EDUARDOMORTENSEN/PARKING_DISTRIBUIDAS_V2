@@ -1,0 +1,272 @@
+{
+	"info": {
+		"name": "Bateria_Pruebas_Parking_ESPE",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "1. Verificar Vida",
+			"item": [
+				{
+					"name": "1.1 Health (Raiz)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/health", "host": ["{{base_url}}"], "path": ["health"]}
+					}
+				},
+				{
+					"name": "1.2 Health (Con /api)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/health", "host": ["{{base_url}}"], "path": ["api", "health"]}
+					}
+				}
+			]
+		},
+		{
+			"name": "2. CRUD de Vehiculos",
+			"item": [
+				{
+					"name": "2.1 Crear AUTO",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Auto\",\"datos\":{\"placa\":\"ABC-1234\",\"marca\":\"Toyota\",\"modelo\":\"Corolla\",\"color\":\"Rojo\",\"anio\":2022,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":400}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "2.2 Crear MOTOCICLETA",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Motocicleta\",\"datos\":{\"placa\":\"ABC123D\",\"marca\":\"Yamaha\",\"modelo\":\"FZ\",\"color\":\"Negro\",\"anio\":2021,\"clasificacion\":\"Gasolina\",\"tipoMoto\":\"Deportiva\"}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "2.3 Crear CAMIONETA",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Camioneta\",\"datos\":{\"placa\":\"XYZ-5678\",\"marca\":\"Ford\",\"modelo\":\"F-150\",\"color\":\"Blanco\",\"anio\":2023,\"clasificacion\":\"Diesel\",\"capacidadCarga\":1000,\"cabina\":\"doble\"}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "2.4 Crear con Propietario",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Auto\",\"idPropietario\":\"550e8400-e29b-41d4-a716-446655440000\",\"datos\":{\"placa\":\"DEF-9999\",\"marca\":\"Kia\",\"modelo\":\"Rio\",\"color\":\"Azul\",\"anio\":2020,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":350}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "2.5 Listar Todos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "2.6 Buscar por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/vehiculos/550e8400-e29b-41d4-a716-446655440000", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "550e8400-e29b-41d4-a716-446655440000"]}
+					}
+				},
+				{
+					"name": "2.7 Buscar por Placa",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/vehiculos/placa/ABC-1234", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "placa", "ABC-1234"]}
+					}
+				},
+				{
+					"name": "2.8 Buscar por Propietario",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/vehiculos/propietario/550e8400-e29b-41d4-a716-446655440000", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "propietario", "550e8400-e29b-41d4-a716-446655440000"]}
+					}
+				},
+				{
+					"name": "2.9 Actualizar Vehiculo (Color)",
+					"request": {
+						"method": "PATCH",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"color\":\"Verde\"}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos/550e8400-e29b-41d4-a716-446655440000", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "550e8400-e29b-41d4-a716-446655440000"]}
+					}
+				},
+				{
+					"name": "2.10 Intentar cambiar Placa (Error 400)",
+					"request": {
+						"method": "PATCH",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"placa\":\"ZZZ-0000\"}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos/550e8400-e29b-41d4-a716-446655440000", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "550e8400-e29b-41d4-a716-446655440000"]}
+					}
+				},
+				{
+					"name": "2.11 Dar de Baja (Baja logica)",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/vehiculos/550e8400-e29b-41d4-a716-446655440000", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "550e8400-e29b-41d4-a716-446655440000"]}
+					}
+				},
+				{
+					"name": "2.12 Reactivar Vehiculo",
+					"request": {
+						"method": "PATCH",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/vehiculos/550e8400-e29b-41d4-a716-446655440000/reactivar", "host": ["{{base_url}}"], "path": ["api", "vehiculos", "550e8400-e29b-41d4-a716-446655440000", "reactivar"]}
+					}
+				}
+			]
+		},
+		{
+			"name": "3. Gateway Tickets",
+			"item": [
+				{
+					"name": "3.1 Consultar estado (Placa Existe)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/gateway/vehiculos/ABC-1234", "host": ["{{base_url}}"], "path": ["api", "gateway", "vehiculos", "ABC-1234"]}
+					}
+				},
+				{
+					"name": "3.2 Consultar estado (Placa NO existe)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "{{base_url}}/api/gateway/vehiculos/ZZZ-0000", "host": ["{{base_url}}"], "path": ["api", "gateway", "vehiculos", "ZZZ-0000"]}
+					}
+				},
+				{
+					"name": "3.3 Autorizar Ingreso",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"placa\":\"ABC-1234\"}"},
+						"url": {"raw": "{{base_url}}/api/gateway/ingresos", "host": ["{{base_url}}"], "path": ["api", "gateway", "ingresos"]}
+					}
+				},
+				{
+					"name": "3.4 Intentar doble ingreso (Error 409)",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"placa\":\"ABC-1234\"}"},
+						"url": {"raw": "{{base_url}}/api/gateway/ingresos", "host": ["{{base_url}}"], "path": ["api", "gateway", "ingresos"]}
+					}
+				},
+				{
+					"name": "3.5 Autorizar Salida",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"placa\":\"ABC-1234\"}"},
+						"url": {"raw": "{{base_url}}/api/gateway/salidas", "host": ["{{base_url}}"], "path": ["api", "gateway", "salidas"]}
+					}
+				},
+				{
+					"name": "3.6 Intentar salida sin ingreso (Error 409)",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"placa\":\"ABC-1234\"}"},
+						"url": {"raw": "{{base_url}}/api/gateway/salidas", "host": ["{{base_url}}"], "path": ["api", "gateway", "salidas"]}
+					}
+				},
+				{
+					"name": "3.7 Walk-in (Registrar e Ingresar)",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"vehiculo\":{\"tipo\":\"Auto\",\"datos\":{\"placa\":\"NEW-0001\",\"marca\":\"Chevrolet\",\"modelo\":\"Aveo\",\"color\":\"Plateado\",\"anio\":2019,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":300}}}"},
+						"url": {"raw": "{{base_url}}/api/gateway/ingresos/walk-in", "host": ["{{base_url}}"], "path": ["api", "gateway", "ingresos", "walk-in"]}
+					}
+				}
+			]
+		},
+		{
+			"name": "4. Pruebas de Validacion (Fallos esperados)",
+			"item": [
+				{
+					"name": "4.1 Placa con formato incorrecto",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Auto\",\"datos\":{\"placa\":\"1234-ABC\",\"marca\":\"Toyota\",\"modelo\":\"Corolla\",\"color\":\"Rojo\",\"anio\":2022,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":400}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "4.2 Año futuro invalido",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Auto\",\"datos\":{\"placa\":\"GHI-1111\",\"marca\":\"Toyota\",\"modelo\":\"Corolla\",\"color\":\"Rojo\",\"anio\":2099,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":400}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "4.3 Campo inventado (forbidNonWhitelisted)",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Auto\",\"campoInventado\":\"hackeo\",\"datos\":{\"placa\":\"GHI-2222\",\"marca\":\"Toyota\",\"modelo\":\"Corolla\",\"color\":\"Rojo\",\"anio\":2022,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":400}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "4.4 Placa duplicada (Error 409)",
+					"request": {
+						"method": "POST",
+						"header": [{"key": "Content-Type", "value": "application/json"}],
+						"body": {"mode": "raw", "raw": "{\"tipo\":\"Auto\",\"datos\":{\"placa\":\"ABC-1234\",\"marca\":\"Toyota\",\"modelo\":\"Corolla\",\"color\":\"Rojo\",\"anio\":2022,\"clasificacion\":\"Gasolina\",\"numeroPuertas\":4,\"capacidadMaletero\":400}}"},
+						"url": {"raw": "{{base_url}}/api/vehiculos", "host": ["{{base_url}}"], "path": ["api", "vehiculos"]}
+					}
+				}
+			]
+		},
+		{
+			"name": "5. A traves de Kong Gateway (Puerto 8000)",
+			"item": [
+				{
+					"name": "5.1 Listar Vehiculos por Kong",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "apikey", "value": "{{apikey}}"}],
+						"url": {"raw": "http://localhost:8000/api/vehiculos", "host": ["localhost"], "port": "8000", "path": ["api", "vehiculos"]}
+					}
+				},
+				{
+					"name": "5.2 Consultar estado via Kong",
+					"request": {
+						"method": "GET",
+						"header": [{"key": "apikey", "value": "{{apikey}}"}],
+						"url": {"raw": "http://localhost:8000/api/gateway/vehiculos/ABC-1234", "host": ["localhost"], "port": "8000", "path": ["api", "gateway", "vehiculos", "ABC-1234"]}
+					}
+				},
+				{
+					"name": "5.3 Sin APIKEY (Debe dar Error 401)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {"raw": "http://localhost:8000/api/vehiculos", "host": ["localhost"], "port": "8000", "path": ["api", "vehiculos"]}
+					}
+				}
+			]
+		}
+	]
+}

@@ -1,0 +1,234 @@
+{
+  "info": {
+    "name": "Pruebas Auditoria - Endpoints CREATE",
+    "description": "Colección para probar todos los endpoints de creación (POST) y verificar que generen eventos de auditoría.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "Aqui_poner_un_token_valido_generado_en_el_login",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "1. Usuarios - Crear Persona y Usuario",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/usuarios/personas",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "usuarios",
+            "personas"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"dni\": \"1710000041\",\n    \"email\": \"postman.audit@example.com\",\n    \"firstName\": \"Postman\",\n    \"lastName\": \"Audit\",\n    \"nationality\": \"Ecuatoriana\",\n    \"phone\": \"+593999999995\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "2. Zonas - Crear Zona",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/zonas/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "zonas",
+            ""
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"nombre\": \"Zona Sur\",\n    \"descripcion\": \"Parqueadero exclusivo\",\n    \"capacidad\": 50,\n    \"tipo\": \"REGULAR\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "3. Zonas - Crear Espacio",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/espacios/",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "espacios",
+            ""
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"descripcion\": \"Espacio regular\",\n    \"tipo\": \"AUTO\",\n    \"idZona\": \"00000000-0000-0000-0000-000000000000\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "4. Vehiculos - Crear Vehiculo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/vehiculos",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "vehiculos"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"tipo\": \"Auto\",\n    \"datos\": {\n        \"placa\": \"PBM-1234\",\n        \"marca\": \"Chevrolet\",\n        \"modelo\": \"Aveo\",\n        \"color\": \"Blanco\",\n        \"anio\": 2020,\n        \"clasificacion\": \"Gasolina\",\n        \"numeroPuertas\": 4,\n        \"capacidadMaletero\": 300\n    }\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "5. Asignaciones - Crear Asignacion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/asignaciones",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "asignaciones"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"userId\": \"aqui-va-el-id-del-usuario-propietario\",\n    \"vehicleId\": \"aqui-va-el-id-del-vehiculo\",\n    \"notas\": \"Asignado en pruebas de auditoria\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "6. Tickets - Ingreso Vehiculo",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{token}}"
+          }
+        ],
+        "url": {
+          "raw": "{{base_url}}/api/v1/tickets/ingreso",
+          "host": [
+            "{{base_url}}"
+          ],
+          "path": [
+            "api",
+            "v1",
+            "tickets",
+            "ingreso"
+          ]
+        },
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"id_espacio\": \"aqui-va-el-id-del-espacio\",\n    \"id_usuario\": \"aqui-va-el-id-del-usuario-cliente\",\n    \"placa\": \"PBM-1234\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

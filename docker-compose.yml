@@ -228,7 +228,10 @@ services:
       AUDIT_EXCHANGE: audit_exchange
       AUDIT_ROUTING_KEY: audit.event
     depends_on:
-      - db-tickets
+      db-tickets:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
     networks:
       - default
       - audit-net
@@ -289,6 +292,8 @@ services:
       RABBITMQ_QUEUE: audit_queue
       RABBITMQ_EXCHANGE: audit_exchange
       RABBITMQ_ROUTING_KEY: audit.event
+      THROTTLE_TTL: 60000
+      THROTTLE_LIMIT: 100
     depends_on:
       db-audit:
         condition: service_healthy

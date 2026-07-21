@@ -1,11 +1,14 @@
+import logging
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from app.clients.base_client import BaseHttpClient
 from app.core.config import settings
 from app.utils.enums import CategoriaZona
 from app.utils.exceptions import ServicioExternoException
 from app.utils.tarifas import mapear_categoria_zona
+
+logger = logging.getLogger(__name__)
 
 
 class ZonasClient(BaseHttpClient):
@@ -27,16 +30,18 @@ class ZonasClient(BaseHttpClient):
                 return None
             response.raise_for_status()
             return response.json()
-        except Exception:
+        except Exception as exc:
+            logger.error(f"Error al obtener espacio {id_espacio}: {exc}")
             return None
 
     async def actualizar_estado_espacio(self, id_espacio: uuid.UUID, estado: str, token: str | None = None) -> None:
-        # Envia un string plano ("OCUPADO" o "DISPONIBLE") que Spring Boot mapea al enum EstadoEspacio
+        """Actualiza sincrónicamente el estado de un espacio en ModuloZonas.
+        Lanza ServicioExternoException si la operación falla."""
         response = await self.post(f"/api/v1/espacios/{id_espacio}", json_data=estado, token=token)
         if response.status_code not in (200, 201, 204):
-            # No lanzamos excepción estricta para evitar rollback del ticket si Zonas falla levemente
-            # pero en un sistema real usaríamos sagas o outbox pattern
-            pass
+            raise ServicioExternoException(
+                f"Zonas respondió {response.status_code} al actualizar espacio {id_espacio} a {estado}"
+            )
 
     async def verificar_espacio_disponible(self, id_espacio: uuid.UUID, token: str | None = None) -> bool:
         espacio = await self.obtener_espacio(id_espacio, token)
@@ -45,7 +50,7 @@ class ZonasClient(BaseHttpClient):
         return espacio.get("estado") == "DISPONIBLE"
 
     async def obtener_zonas(self, token: str | None = None) -> list[dict]:
-        ahora = datetime.utcnow()
+        ahora = datetime.now(timezone.utc)
         if self._zonas_cache is not None and self._zonas_cache_expira > ahora:
             return self._zonas_cache
 

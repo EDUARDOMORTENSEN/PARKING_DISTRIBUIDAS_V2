@@ -52,6 +52,12 @@ class TicketRepository:
         )
         return list(result.scalars().all())
 
+    async def delete(self, ticket: Ticket) -> None:
+        """Elimina un ticket de la base de datos. Se usa como rollback cuando
+        la actualización síncrona del estado del espacio en Zonas falla."""
+        await self.db.delete(ticket)
+        await self.db.commit()
+
     async def update(self, ticket: Ticket) -> Ticket:
         """El objeto ya viene modificado (atributos seteados en el service);
         aquí solo se persiste el cambio."""

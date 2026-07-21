@@ -19,7 +19,7 @@ import { EventoAuditoria } from './audit/entities/evento-auditoria.entity';
         password: config.get('DB_PASSWORD'),
         database: config.get('DB_NAME'),
         entities: [EventoAuditoria],
-        synchronize: false,
+        synchronize: true,
         logging: false,
       }),
       inject: [ConfigService],
@@ -29,8 +29,8 @@ import { EventoAuditoria } from './audit/entities/evento-auditoria.entity';
       useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            ttl: +config.get('THROTTLE_TTL'),
-            limit: +config.get('THROTTLE_LIMIT'),
+            ttl: +(config.get('THROTTLE_TTL') ?? 60000),
+            limit: +(config.get('THROTTLE_LIMIT') ?? 100),
           },
         ],
       }),

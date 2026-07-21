@@ -16,18 +16,21 @@ from app.utils.exceptions import (
     VehiculoNoEncontradoException,
 )
 
+import asyncio
+import json
+import logging
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from app.utils.rabbitmq_publisher import rabbitmq_publisher
+
+logger_audit = logging.getLogger("audit_middleware")
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Startup: las tablas se crean vía Alembic, no aquí.
-    # Aquí se podrían inicializar recursos si se necesitan.
     yield
     # Shutdown: liberar recursos si aplica
-    
-from starlette.middleware.base import BaseHTTPMiddleware
-from app.utils.rabbitmq_publisher import rabbitmq_publisher
-import json
-import base64
 
 class AuditMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
@@ -71,8 +74,10 @@ class AuditMiddleware(BaseHTTPMiddleware):
                     "status_code": response.status_code
                 }
             }
-            import asyncio
-            asyncio.create_task(rabbitmq_publisher.publish_audit_event(audit_payload))
+            task = asyncio.create_task(rabbitmq_publisher.publish_audit_event(audit_payload))
+            task.add_done_callback(
+                lambda t: logger_audit.error(f"Audit publish failed: {t.exception()}") if t.exception() else None
+            )
             
         return response
 

@@ -1,4 +1,4 @@
-from app.api.v1.endpoints import tickets
+import logging
 import uuid
 from datetime import datetime, timezone
 
@@ -17,6 +17,8 @@ from app.utils.exceptions import (
 )
 from app.utils.rabbitmq_publisher import rabbitmq_publisher
 from app.sse.sse_service import sse_service
+
+logger = logging.getLogger(__name__)
 
 
 class TicketService:
@@ -71,7 +73,22 @@ class TicketService:
             tarifa_hora_aplicada=tarifa_hora,
         )
         ticket_creado = await self.ticket_repository.create(nuevo_ticket)
-        # Emitir evento a RabbitMQ (Outbox Pattern) y a los clientes conectados por SSE
+
+        # Actualizar estado del espacio sincrónicamente en Zonas
+        try:
+            await self.zonas_client.actualizar_estado_espacio(
+                data.id_espacio, "OCUPADO", self.token
+            )
+        except Exception as exc:
+            # Rollback: eliminar el ticket recién creado si Zonas falla
+            logger.error(
+                f"Fallo al actualizar espacio {data.id_espacio} a OCUPADO en Zonas: {exc}. "
+                f"Revirtiendo ticket {ticket_creado.codigo_ticket}."
+            )
+            await self.ticket_repository.delete(ticket_creado)
+            raise
+
+        # Emitir evento a RabbitMQ y a los clientes conectados por SSE
         await self._emitir_evento_espacio(
             "created", data.id_espacio, "OCUPADO"
         )
@@ -99,7 +116,20 @@ class TicketService:
         ticket.estado_ticket = EstadoTicket.PAGADO
 
         ticket_actualizado = await self.ticket_repository.update(ticket)
-        # Emitir evento a RabbitMQ para liberar espacio y notificar por SSE
+
+        # Actualizar estado del espacio sincrónicamente en Zonas
+        try:
+            await self.zonas_client.actualizar_estado_espacio(
+                ticket.id_espacio, "DISPONIBLE", self.token
+            )
+        except Exception as exc:
+            logger.error(
+                f"Fallo al liberar espacio {ticket.id_espacio} en Zonas: {exc}. "
+                f"El ticket {ticket.codigo_ticket} ya fue marcado como PAGADO."
+            )
+            # No hacemos rollback del ticket ya pagado, pero logueamos la inconsistencia
+
+        # Emitir evento a RabbitMQ para notificar por SSE
         await self._emitir_evento_espacio(
             "salida_registrada", ticket.id_espacio, "DISPONIBLE"
         )
@@ -118,7 +148,19 @@ class TicketService:
 
         ticket.estado_ticket = EstadoTicket.ANULADO
         ticket_actualizado = await self.ticket_repository.update(ticket)
-        # Emitir evento a RabbitMQ para liberar espacio y notificar por SSE
+
+        # Actualizar estado del espacio sincrónicamente en Zonas
+        try:
+            await self.zonas_client.actualizar_estado_espacio(
+                ticket.id_espacio, "DISPONIBLE", self.token
+            )
+        except Exception as exc:
+            logger.error(
+                f"Fallo al liberar espacio {ticket.id_espacio} en Zonas tras anulación: {exc}. "
+                f"El ticket {ticket.codigo_ticket} ya fue anulado."
+            )
+
+        # Emitir evento a RabbitMQ para notificar por SSE
         await self._emitir_evento_espacio(
             "anulado", ticket.id_espacio, "DISPONIBLE"
         )
@@ -134,7 +176,10 @@ class TicketService:
         event_type: str, id_espacio: uuid.UUID, estado: str
     ) -> None:
         payload = {"id_espacio": str(id_espacio), "estado": estado}
-        await rabbitmq_publisher.publish_ticket_event(event_type, payload)
+        try:
+            await rabbitmq_publisher.publish_ticket_event(event_type, payload)
+        except Exception as exc:
+            logger.error(f"Error publicando evento RabbitMQ {event_type}: {exc}")
         await sse_service.emit_event(event_type, payload)
 
     async def _get_ticket_o_falla(self, id_ticket: uuid.UUID) -> Ticket:

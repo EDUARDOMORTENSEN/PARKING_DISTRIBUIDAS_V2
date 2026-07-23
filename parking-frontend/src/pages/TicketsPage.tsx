@@ -181,6 +181,7 @@ export default function TicketsPage() {
                 <tr>
                   <th>Código</th>
                   <th>Placa</th>
+                  <th>Usuario</th>
                   <th>Categoría</th>
                   <th>Ingreso</th>
                   <th>Salida</th>
@@ -194,6 +195,13 @@ export default function TicketsPage() {
                   <tr key={t.id_ticket}>
                     <td style={{ color: 'var(--text-primary)', fontWeight: 600, fontFamily: 'monospace' }}>{t.codigo_ticket}</td>
                     <td><span className="badge badge-neutral">{t.placa}</span></td>
+                    <td>
+                      {t.id_usuario ? (
+                        <span className="badge badge-primary">✓ Registrado</span>
+                      ) : (
+                        <span className="badge badge-warning">🚶 Visitante</span>
+                      )}
+                    </td>
                     <td>
                       <span className="badge badge-info" style={{ marginRight: '0.25rem' }}>{t.categoria_vehiculo}</span>
                       <span className="badge badge-purple">{t.categoria_zona}</span>

@@ -6,7 +6,7 @@ from app.core.config import settings
 from app.models.ticket import Ticket
 from app.repositories.ticket_repository import TicketRepository
 from app.schemas.ticket import TicketAnular, TicketCreate, TicketRegistrarSalida
-from app.utils.enums import EstadoTicket
+from app.utils.enums import EstadoTicket, CategoriaVehiculo
 from decimal import Decimal
 from app.utils.exceptions import (
     EspacioNoDisponibleException,
@@ -67,6 +67,16 @@ class TicketService:
                 tipo = "AUTO"
         from app.utils.tarifas import mapear_categoria_vehiculo
         categoria_vehiculo = mapear_categoria_vehiculo(tipo)
+
+        # Validar que el espacio corresponda al tipo de vehículo
+        tipo_espacio = str(espacio.get("tipo", "")).upper().strip()
+        import logging
+        logging.getLogger(__name__).warning(f"DEBUG VALIDACION: tipo_espacio={tipo_espacio}, categoria_vehiculo={categoria_vehiculo}")
+        
+        if tipo_espacio == "MOTO" and categoria_vehiculo != CategoriaVehiculo.MOTO:
+            raise EstadoInvalidoException("El espacio seleccionado es para MOTOS, pero el vehículo ingresado no es una moto.")
+        if tipo_espacio == "AUTO" and categoria_vehiculo != CategoriaVehiculo.AUTO_CAMIONETA:
+            raise EstadoInvalidoException("El espacio seleccionado es para AUTOS, pero el vehículo ingresado no es un auto/camioneta.")
 
         # Inferir usuario a partir del vehículo o de asignaciones_client
         id_usuario = None

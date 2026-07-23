@@ -51,6 +51,7 @@ class Settings(BaseSettings):
     ZONAS_URL: str
     VEHICULOS_URL: str
     USUARIOS_URL: str
+    ASIGNACIONES_URL: str
     PUBLIC_KEY_URL: str = "http://gestion-usuarios:3001/api/usuarios/auth/jwks"
 
     # ---------- RabbitMQ ----------

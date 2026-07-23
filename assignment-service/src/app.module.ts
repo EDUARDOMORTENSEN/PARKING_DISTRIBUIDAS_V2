@@ -39,7 +39,7 @@ import { AuditoriaAsignacion } from './auditoria/entities/auditoria-asignacion.e
         password: configService.get<string>('DB_CONTRASENA'),
         database: configService.get<string>('DB_NOMBRE'),
         entities: [AsignacionVehiculo, AuditoriaAsignacion],
-        synchronize: false,
+        synchronize: true,
         logging: false,
       }),
       inject: [ConfigService],

@@ -75,13 +75,13 @@ export class SeederService implements OnApplicationBootstrap {
       {
         name: 'RECAUDADOR',
         description: 'Rol Recaudador',
-        permissions: ['TICKETS_CREATE', 'TICKETS_READ', 'TICKETS_UPDATE']
+        permissions: ['TICKETS_CREATE', 'TICKETS_READ', 'TICKETS_UPDATE', 'VEHICULOS_READ', 'ASIGNACIONES_READ', 'ZONAS_READ', 'ZONAS_UPDATE']
       },
       {
         name: 'CLIENTE',
         description: 'Rol Cliente',
         permissions: [
-          'ZONAS_READ', 'VEHICULOS_READ', 'VEHICULOS_UPDATE', 'VEHICULOS_DELETE',
+          'ZONAS_READ', 'VEHICULOS_CREATE', 'VEHICULOS_READ', 'VEHICULOS_UPDATE', 'VEHICULOS_DELETE',
           'USUARIOS_READ', 'USUARIOS_UPDATE'
         ]
       }

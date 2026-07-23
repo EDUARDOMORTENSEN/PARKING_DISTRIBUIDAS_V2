@@ -27,11 +27,13 @@ class TicketService:
         ticket_repository: TicketRepository,
         zonas_client,
         vehiculos_client,
+        asignaciones_client,
         token: str | None = None,
     ):
         self.ticket_repository = ticket_repository
         self.zonas_client = zonas_client
         self.vehiculos_client = vehiculos_client
+        self.asignaciones_client = asignaciones_client
         self.token = token
 
     async def create_ticket(
@@ -47,9 +49,40 @@ class TicketService:
             espacio["idZona"], self.token
         )
 
-        categoria_vehiculo = await self.vehiculos_client.obtener_categoria_vehiculo(
-            data.placa, self.token
-        )
+        # Buscar el vehículo para obtener su ID y categoría
+        vehiculo = await self.vehiculos_client.obtener_vehiculo(data.placa, self.token)
+        if not vehiculo:
+            raise VehiculoNoEncontradoException(f"El vehículo con placa {data.placa} no existe")
+        
+        # Obtener categoría manualmente (evitamos llamar obtener_categoria_vehiculo que hace otra request)
+        tipo = vehiculo.get("tipo")
+        if not tipo:
+            if "numeroPuertas" in vehiculo and vehiculo["numeroPuertas"] is not None:
+                tipo = "AUTO"
+            elif "tipoMoto" in vehiculo and vehiculo["tipoMoto"] is not None:
+                tipo = "MOTO"
+            elif "capacidadCarga" in vehiculo and vehiculo["capacidadCarga"] is not None:
+                tipo = "CAMIONETA"
+            else:
+                tipo = "AUTO"
+        from app.utils.tarifas import mapear_categoria_vehiculo
+        categoria_vehiculo = mapear_categoria_vehiculo(tipo)
+
+        # Inferir usuario a partir del vehículo o de asignaciones_client
+        id_usuario = None
+        if vehiculo.get("idPropietario"):
+            try:
+                id_usuario = uuid.UUID(vehiculo["idPropietario"])
+            except ValueError:
+                pass
+
+        if not id_usuario:
+            asignacion = await self.asignaciones_client.obtener_asignacion_activa(vehiculo["id"], self.token)
+            if asignacion and "userId" in asignacion:
+                try:
+                    id_usuario = uuid.UUID(asignacion["userId"])
+                except ValueError:
+                    pass
 
         ticket_activo = await self.ticket_repository.get_activo_by_espacio(
             data.id_espacio
@@ -63,7 +96,7 @@ class TicketService:
 
         nuevo_ticket = Ticket(
             id_espacio=data.id_espacio,
-            id_usuario=data.id_usuario,
+            id_usuario=id_usuario,
             placa=data.placa,
             id_empleado=id_empleado,
             codigo_ticket=self._generar_codigo_ticket(),

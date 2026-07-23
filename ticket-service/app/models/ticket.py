@@ -21,7 +21,7 @@ class Ticket(Base):
 
     # Referencias a otros microservicios (sin FK, se validan por HTTP)
     id_espacio: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
-    id_usuario: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
+    id_usuario: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
     placa: Mapped[str] = mapped_column(String(15), nullable=False, index=True)
     id_empleado: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), nullable=False)
 

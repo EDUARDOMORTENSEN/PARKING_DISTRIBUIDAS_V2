@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.clients.vehiculos_client import VehiculosClient
 from app.clients.zonas_client import ZonasClient
+from app.clients.asignaciones_client import AsignacionesClient
 from app.db.session import get_db
 from app.repositories.ticket_repository import TicketRepository
 from app.services.ticket_service import TicketService
@@ -64,16 +65,22 @@ def get_zonas_client() -> ZonasClient:
 def get_vehiculos_client() -> VehiculosClient:
     return VehiculosClient()
 
+@lru_cache
+def get_asignaciones_client() -> AsignacionesClient:
+    return AsignacionesClient()
+
 
 def get_ticket_service(
     ticket_repository: Annotated[TicketRepository, Depends(get_ticket_repository)],
     zonas_client: Annotated[ZonasClient, Depends(get_zonas_client)],
     vehiculos_client: Annotated[VehiculosClient, Depends(get_vehiculos_client)],
+    asignaciones_client: Annotated[AsignacionesClient, Depends(get_asignaciones_client)],
     token: Annotated[str | None, Header(alias="Authorization")] = None,
 ) -> TicketService:
     return TicketService(
         ticket_repository=ticket_repository,
         zonas_client=zonas_client,
         vehiculos_client=vehiculos_client,
+        asignaciones_client=asignaciones_client,
         token=token,
     )

@@ -25,14 +25,11 @@ export class PersonasClientService {
    */
   async existePersona(idPersona: string): Promise<boolean> {
     try {
-      await firstValueFrom(
-        this.httpService.get(`${this.baseUrl}/personas/${idPersona}`, { timeout: 3000 }),
+      const response = await firstValueFrom(
+        this.httpService.get(`${this.baseUrl}/personas/exists/${idPersona}`, { timeout: 3000 }),
       );
-      return true;
+      return response.data?.exists === true;
     } catch (error: any) {
-      if (error?.response?.status === 404) {
-        return false;
-      }
       this.logger.error(`No se pudo validar la persona ${idPersona} en gestion-usuarios: ${error}`);
       throw new ServiceUnavailableException('No se pudo validar el propietario en este momento');
     }

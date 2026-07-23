@@ -217,6 +217,7 @@ services:
       ZONAS_URL: http://kong:8000
       VEHICULOS_URL: http://kong:8000
       USUARIOS_URL: http://kong:8000
+      ASIGNACIONES_URL: http://kong:8000
       PUBLIC_KEY_URL: ${PUBLIC_KEY_URL}
       RABBITMQ_HOST: ${RABBITMQ_HOST}
       RABBITMQ_PORT: ${RABBITMQ_PORT}

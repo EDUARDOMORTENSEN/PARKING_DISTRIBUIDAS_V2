@@ -1,3 +1,12 @@
+import type {
+  Zona, CreateZonaRequest,
+  Espacio, CreateEspacioRequest, EstadoEspacio,
+  Ticket, CreateTicketRequest,
+  Vehiculo, CreateVehiculoRequest,
+  Persona, CreatePersonaRequest,
+  Role,
+} from '../types';
+
 const API_BASE = '/api';
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
@@ -23,13 +32,13 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
 
   if (!res.ok) {
     const msg = data?.message || data?.detail || data?.error || `Error ${res.status}`;
-    throw new Error(Array.isArray(msg) ? msg.join(', ') : msg);
+    throw new Error(Array.isArray(msg) ? msg.join(', ') : String(msg));
   }
 
   return data as T;
 }
 
-// Auth
+// ======== Auth ========
 export const authApi = {
   login: (username: string, password: string) =>
     request<{ access_token: string; refresh_token: string }>('/usuarios/auth/login', {
@@ -40,9 +49,7 @@ export const authApi = {
     request<{ userId: string; username: string; roles: string[]; permissions: string[] }>('/usuarios/auth/validate'),
 };
 
-// Zonas
-import type { Zona, CreateZonaRequest } from '../types';
-
+// ======== Zonas ========
 export const zonasApi = {
   getAll: () => request<Zona[]>('/v1/zonas/'),
   create: (data: CreateZonaRequest) =>
@@ -53,9 +60,7 @@ export const zonasApi = {
     request<void>(`/v1/zonas/${id}`, { method: 'PATCH' }),
 };
 
-// Espacios
-import type { Espacio, CreateEspacioRequest, EstadoEspacio } from '../types';
-
+// ======== Espacios ========
 export const espaciosApi = {
   getAll: () => request<Espacio[]>('/v1/espacios/'),
   getById: (id: string) => request<Espacio>(`/v1/espacios/${id}`),
@@ -67,9 +72,7 @@ export const espaciosApi = {
   delete: (id: string) => request<void>(`/v1/espacios/${id}`, { method: 'DELETE' }),
 };
 
-// Tickets
-import type { Ticket, CreateTicketRequest } from '../types';
-
+// ======== Tickets ========
 export const ticketsApi = {
   create: (data: CreateTicketRequest) =>
     request<Ticket>('/v1/tickets/', { method: 'POST', body: JSON.stringify(data) }),
@@ -86,13 +89,12 @@ export const ticketsApi = {
     }),
 };
 
-// Vehiculos
-import type { Vehiculo, CreateVehiculoRequest } from '../types';
-
+// ======== Vehiculos ========
 export const vehiculosApi = {
   getAll: () => request<Vehiculo[]>('/vehiculos'),
   getById: (id: string) => request<Vehiculo>(`/vehiculos/${id}`),
   getByPlaca: (placa: string) => request<Vehiculo>(`/vehiculos/placa/${placa}`),
+  getByPropietario: (idPropietario: string) => request<Vehiculo[]>(`/vehiculos/propietario/${idPropietario}`),
   create: (data: CreateVehiculoRequest) =>
     request<Vehiculo>('/vehiculos', { method: 'POST', body: JSON.stringify(data) }),
   update: (id: string, data: Record<string, unknown>) =>
@@ -100,12 +102,11 @@ export const vehiculosApi = {
   delete: (id: string) => request<Vehiculo>(`/vehiculos/${id}`, { method: 'DELETE' }),
 };
 
-// Personas
-import type { Persona, CreatePersonaRequest } from '../types';
-
+// ======== Personas ========
 export const personasApi = {
   getAll: () => request<Persona[]>('/usuarios/personas'),
   getById: (id: string) => request<Persona>(`/usuarios/personas/${id}`),
+  getByDni: (dni: string) => request<Persona>(`/usuarios/personas/dni/${dni}`),
   create: (data: CreatePersonaRequest) =>
     request<{ persona: Persona; user: { id: string; username: string } }>('/usuarios/personas', {
       method: 'POST',
@@ -117,4 +118,22 @@ export const personasApi = {
     request<Persona>(`/usuarios/personas/activate/${id}`, { method: 'PATCH' }),
   deactivate: (id: string) =>
     request<Persona>(`/usuarios/personas/deactivate/${id}`, { method: 'PATCH' }),
+};
+
+// ======== Roles ========
+export const rolesApi = {
+  getAll: () => request<Role[]>('/usuarios/roles'),
+  getByName: (name: string) => request<Role>(`/usuarios/roles/name/${name}`),
+};
+
+// ======== RoleUsers ========
+export const roleUsersApi = {
+  getAll: () => request<unknown[]>('/usuarios/roleusers'),
+  getByUser: (userId: string) => request<unknown[]>(`/usuarios/roleusers/user/${userId}`),
+  assign: (id_user: string, role_name: string) =>
+    request<unknown>('/usuarios/roleusers', { method: 'POST', body: JSON.stringify({ id_user, role_name }) }),
+  deactivate: (id_user: string, id_role: string) =>
+    request<unknown>(`/usuarios/roleusers/deactivate/${id_user}/${id_role}`, { method: 'PATCH' }),
+  activate: (id_user: string, id_role: string) =>
+    request<unknown>(`/usuarios/roleusers/activate/${id_user}/${id_role}`, { method: 'PATCH' }),
 };

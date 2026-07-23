@@ -97,6 +97,27 @@ export class AsignacionesController {
     return this.asignacionesService.findFlotaPorPropietario(userId, token);
   }
 
+  @Get('vehiculo/:vehicleId/activo')
+  @RequirePermissions('ASIGNACIONES_READ')
+  @ApiOperation({
+    summary: 'Consultar asignación activa por vehículo',
+    description: 'Retorna la asignación activa para un vehículo específico. Utilizado por ticket-service para inferir el propietario.',
+  })
+  @ApiParam({
+    name: 'vehicleId',
+    description: 'UUID del vehículo',
+    example: '550e8400-e29b-41d4-a716-446655440000',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Asignación activa encontrada.',
+    type: AsignacionVehiculo,
+  })
+  @ApiNotFoundResponse({ description: 'No existe asignación activa para el vehículo.' })
+  findActivaPorVehiculo(@Param('vehicleId', ParseUUIDPipe) vehicleId: string) {
+    return this.asignacionesService.findActivaPorVehiculo(vehicleId);
+  }
+
   // ──────────────────────────────────────────────────────────────────────
   // Consultas generales
   // ──────────────────────────────────────────────────────────────────────

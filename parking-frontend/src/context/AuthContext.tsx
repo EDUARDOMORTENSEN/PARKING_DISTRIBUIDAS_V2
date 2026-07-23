@@ -11,6 +11,9 @@ interface AuthState {
   logout: () => void;
   hasPermission: (perm: string) => boolean;
   hasRole: (role: string) => boolean;
+  isAdmin: boolean;
+  isRecaudador: boolean;
+  isCliente: boolean;
 }
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -20,6 +23,7 @@ function decodeToken(token: string): UserPayload | null {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return {
       sub: payload.sub,
+      personId: payload.personId,
       username: payload.username,
       roles: payload.roles || [],
       permissions: payload.permissions || [],
@@ -30,23 +34,31 @@ function decodeToken(token: string): UserPayload | null {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [user, setUser] = useState<UserPayload | null>(() => {
     const t = localStorage.getItem('token');
-    return t ? decodeToken(t) : null;
+    if (!t) return null;
+    const decoded = decodeToken(t);
+    // Force re-login if the token is old and missing personId
+    if (decoded && !decoded.personId) {
+      localStorage.removeItem('token');
+      return null;
+    }
+    return decoded;
   });
+  // Also clear token state if we returned null above
+  const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (token) {
-      authApi.validate().then(() => {
-        setLoading(false);
-      }).catch(() => {
-        setToken(null);
-        setUser(null);
-        localStorage.removeItem('token');
-        setLoading(false);
-      });
+      authApi.validate()
+        .then(() => setLoading(false))
+        .catch(() => {
+          setToken(null);
+          setUser(null);
+          localStorage.removeItem('token');
+          setLoading(false);
+        });
     } else {
       setLoading(false);
     }
@@ -67,10 +79,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const hasPermission = (perm: string) => user?.permissions.includes(perm) ?? false;
-  const hasRole = (role: string) => user?.roles.includes(role) ?? false;
+  const hasRole = (role: string) => user?.roles.some(r => r.toUpperCase() === role.toUpperCase()) ?? false;
+
+  const isAdmin = hasRole('ROOT') || hasRole('ADMIN');
+  const isRecaudador = hasRole('RECAUDADOR');
+  const isCliente = !isAdmin && !isRecaudador;
 
   return (
-    <AuthContext.Provider value={{ token, user, isAuthenticated: !!token, loading, login, logout, hasPermission, hasRole }}>
+    <AuthContext.Provider value={{
+      token, user, isAuthenticated: !!token, loading,
+      login, logout, hasPermission, hasRole,
+      isAdmin, isRecaudador, isCliente,
+    }}>
       {children}
     </AuthContext.Provider>
   );

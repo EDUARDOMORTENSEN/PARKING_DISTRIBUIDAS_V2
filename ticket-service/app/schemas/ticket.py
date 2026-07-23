@@ -8,9 +8,8 @@ from app.utils.enums import CategoriaVehiculo, CategoriaZona, EstadoTicket
 
 class TicketBase(BaseModel):
     id_espacio: uuid.UUID
-    id_usuario: uuid.UUID
+    id_usuario: uuid.UUID | None = None
     placa: str = Field(..., min_length=1, max_length=15)
-
 
 class TicketCreate(TicketBase):
     """Body para POST /tickets. id_empleado NO va aquí:

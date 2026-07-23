@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
@@ -7,20 +7,55 @@ import ZonasPage from './pages/ZonasPage';
 import TicketsPage from './pages/TicketsPage';
 import VehiculosPage from './pages/VehiculosPage';
 import UsuariosPage from './pages/UsuariosPage';
+import MiVehiculoPage from './pages/MiVehiculoPage';
+import MiPerfilPage from './pages/MiPerfilPage';
 import type { ReactNode } from 'react';
 
 function ProtectedRoute({ children }: { children: ReactNode }) {
   const { isAuthenticated, loading } = useAuth();
-  if (loading) return <div className="loading-page"><div className="spinner" /></div>;
+  if (loading) return <div className="loading-page"><div className="spinner" /><span>Cargando...</span></div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
+function RoleRoute({ children, allowAdmin, allowRecaudador, allowCliente }: {
+  children: ReactNode;
+  allowAdmin?: boolean;
+  allowRecaudador?: boolean;
+  allowCliente?: boolean;
+}) {
+  const { isAdmin, isRecaudador, isCliente } = useAuth();
+  if (allowAdmin && isAdmin) return <>{children}</>;
+  if (allowRecaudador && isRecaudador) return <>{children}</>;
+  if (allowCliente && isCliente) return <>{children}</>;
+  // Redirect to appropriate home
+  if (isAdmin) return <Navigate to="/dashboard" replace />;
+  if (isRecaudador) return <Navigate to="/dashboard" replace />;
+  return <Navigate to="/mi-vehiculo" replace />;
+}
+
 function AppLayout({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // No mostrar el botón de regresar en las páginas principales de cada rol
+  const isMainPage = ['/dashboard', '/mi-vehiculo', '/login'].includes(location.pathname);
+
   return (
     <div className="app-layout">
       <Sidebar />
       <div className="main-content">
+        {!isMainPage && (
+          <div style={{ padding: '1rem 2rem 0 2rem' }}>
+            <button 
+              className="btn btn-ghost" 
+              onClick={() => navigate(-1)} 
+              style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem', display: 'inline-flex', alignItems: 'center', gap: '0.5rem' }}
+            >
+              <span>←</span> Regresar
+            </button>
+          </div>
+        )}
         <div className="page-content">
           {children}
         </div>
@@ -29,20 +64,53 @@ function AppLayout({ children }: { children: ReactNode }) {
   );
 }
 
+function DefaultRedirect() {
+  const { isAdmin, isRecaudador, isCliente } = useAuth();
+  if (isAdmin) return <Navigate to="/dashboard" replace />;
+  if (isRecaudador) return <Navigate to="/dashboard" replace />;
+  if (isCliente) return <Navigate to="/mi-vehiculo" replace />;
+  return <Navigate to="/login" replace />;
+}
+
 function AppRoutes() {
   const { isAuthenticated, loading } = useAuth();
-
-  if (loading) return <div className="loading-page"><div className="spinner" /></div>;
+  if (loading) return <div className="loading-page"><div className="spinner" /><span>Cargando...</span></div>;
 
   return (
     <Routes>
-      <Route path="/login" element={isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />} />
-      <Route path="/dashboard" element={<ProtectedRoute><AppLayout><DashboardPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/zonas" element={<ProtectedRoute><AppLayout><ZonasPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/tickets" element={<ProtectedRoute><AppLayout><TicketsPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/vehiculos" element={<ProtectedRoute><AppLayout><VehiculosPage /></AppLayout></ProtectedRoute>} />
-      <Route path="/usuarios" element={<ProtectedRoute><AppLayout><UsuariosPage /></AppLayout></ProtectedRoute>} />
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      <Route path="/login" element={isAuthenticated ? <DefaultRedirect /> : <LoginPage />} />
+
+      {/* Admin routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute><RoleRoute allowAdmin allowRecaudador><AppLayout><DashboardPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+      <Route path="/zonas" element={
+        <ProtectedRoute><RoleRoute allowAdmin><AppLayout><ZonasPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+      <Route path="/vehiculos" element={
+        <ProtectedRoute><RoleRoute allowAdmin allowRecaudador><AppLayout><VehiculosPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+      <Route path="/usuarios" element={
+        <ProtectedRoute><RoleRoute allowAdmin><AppLayout><UsuariosPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+
+      {/* Recaudador + Admin routes */}
+      <Route path="/tickets" element={
+        <ProtectedRoute><RoleRoute allowAdmin allowRecaudador><AppLayout><TicketsPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+
+      {/* Client routes */}
+      <Route path="/mi-vehiculo" element={
+        <ProtectedRoute><RoleRoute allowCliente><AppLayout><MiVehiculoPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+      <Route path="/mi-perfil" element={
+        <ProtectedRoute><RoleRoute allowCliente><AppLayout><MiPerfilPage /></AppLayout></RoleRoute></ProtectedRoute>
+      } />
+
+      {/* Default */}
+      <Route path="*" element={
+        <ProtectedRoute><DefaultRedirect /></ProtectedRoute>
+      } />
     </Routes>
   );
 }

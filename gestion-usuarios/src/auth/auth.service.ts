@@ -53,6 +53,7 @@ export class AuthService {
 
     const payload = {
       sub: user.id,
+      personId: user.id_person,
       username: user.username,
       audience: ["zonas-service", "usuarios-service", "vehiculos-service", "tickets-service"],
       roles,

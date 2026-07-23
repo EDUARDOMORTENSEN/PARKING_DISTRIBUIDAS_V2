@@ -139,6 +139,22 @@ export class AsignacionesService {
   }
 
   /**
+   * Retorna la asignación activa para un vehículo específico.
+   * Utilizado para inferir el propietario en el ticket-service.
+   */
+  async findActivaPorVehiculo(vehicleId: string): Promise<AsignacionVehiculo> {
+    const asignacion = await this.asignacionRepo.findOne({
+      where: { vehicleId, activa: true },
+    });
+    if (!asignacion) {
+      throw new NotFoundException(
+        `No existe una asignación activa para el vehículo ${vehicleId}`,
+      );
+    }
+    return asignacion;
+  }
+
+  /**
    * RF3 — Retorna la flota de vehículos de un propietario,
    * enriquecida con tipo y clasificación del servicio de vehículos.
    */

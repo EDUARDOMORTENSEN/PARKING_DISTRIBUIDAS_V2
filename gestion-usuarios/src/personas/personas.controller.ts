@@ -45,6 +45,19 @@ export class PersonasController {
     return this.personasService.findOne(id);
   }
 
+  @Get('exists/:id')
+  @ApiOperation({ summary: 'Verificar si persona existe', description: 'Endpoint ligero y público para validación entre microservicios' })
+  @ApiParam({ name: 'id', description: 'UUID de la persona', example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479' })
+  @ApiResponse({ status: 200, description: 'Devuelve si existe o no' })
+  async checkExists(@Param('id') id: string) {
+    try {
+      await this.personasService.findOne(id);
+      return { exists: true };
+    } catch {
+      return { exists: false };
+    }
+  }
+
   @Get('dni/:dni')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @RequirePermissions('USUARIOS_READ')

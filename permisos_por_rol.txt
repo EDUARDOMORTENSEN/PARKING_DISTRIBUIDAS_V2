@@ -1,0 +1,32 @@
+================================================================================================================
+| ROL          | DESCRIPCIÓN                  | PERMISOS ASIGNADOS                                               |
+================================================================================================================
+| ROOT         | Rol ROOT con acceso total    | ZONAS_CREATE, ZONAS_READ, ZONAS_UPDATE, ZONAS_DELETE             |
+|              |                              | VEHICULOS_CREATE, VEHICULOS_READ, VEHICULOS_UPDATE,              |
+|              |                              | VEHICULOS_DELETE                                                 |
+|              |                              | TICKETS_CREATE, TICKETS_READ, TICKETS_UPDATE, TICKETS_DELETE     |
+|              |                              | ASIGNACIONES_CREATE, ASIGNACIONES_READ, ASIGNACIONES_UPDATE,     |
+|              |                              | ASIGNACIONES_DELETE                                              |
+|              |                              | USUARIOS_CREATE, USUARIOS_READ, USUARIOS_UPDATE, USUARIOS_DELETE |
+|              |                              | ROLES_CREATE, ROLES_READ, ROLES_UPDATE, ROLES_DELETE             |
+|              |                              | ROLEUSERS_CREATE, ROLEUSERS_READ, ROLEUSERS_UPDATE,              |
+|              |                              | ROLEUSERS_DELETE                                                 |
+|              |                              | AUDITORIA_READ                                                   |
+----------------------------------------------------------------------------------------------------------------
+| ADMIN        | Rol Administrador            | ZONAS_CREATE, ZONAS_READ, ZONAS_UPDATE, ZONAS_DELETE             |
+|              |                              | VEHICULOS_CREATE, VEHICULOS_READ, VEHICULOS_UPDATE,              |
+|              |                              | VEHICULOS_DELETE                                                 |
+|              |                              | USUARIOS_CREATE, USUARIOS_READ, USUARIOS_UPDATE, USUARIOS_DELETE |
+|              |                              | ROLES_CREATE, ROLES_READ, ROLES_UPDATE, ROLES_DELETE             |
+|              |                              | ASIGNACIONES_CREATE, ASIGNACIONES_READ, ASIGNACIONES_UPDATE,     |
+|              |                              | ASIGNACIONES_DELETE                                              |
+|              |                              | ROLEUSERS_CREATE, ROLEUSERS_READ, ROLEUSERS_UPDATE,              |
+|              |                              | ROLEUSERS_DELETE                                                 |
+|              |                              | AUDITORIA_READ                                                   |
+----------------------------------------------------------------------------------------------------------------
+| RECAUDADOR   | Rol Recaudador               | TICKETS_CREATE, TICKETS_READ, TICKETS_UPDATE, VEHICULOS_READ       |
+----------------------------------------------------------------------------------------------------------------
+| CLIENTE      | Rol Cliente                  | ZONAS_READ                                                       |
+|              |                              | VEHICULOS_READ, VEHICULOS_UPDATE, VEHICULOS_DELETE               |
+|              |                              | USUARIOS_READ, USUARIOS_UPDATE                                   |
+================================================================================================================

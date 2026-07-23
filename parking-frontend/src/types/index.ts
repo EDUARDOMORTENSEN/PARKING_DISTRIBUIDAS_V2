@@ -1,6 +1,6 @@
 // Types for the parking system DTOs
 
-// Auth
+// ======== Auth ========
 export interface LoginRequest {
   username: string;
   password: string;
@@ -12,13 +12,14 @@ export interface LoginResponse {
 }
 
 export interface UserPayload {
-  sub: string;
+  sub: string;        // userId (UUID)
+  personId: string;   // idPersona (UUID)
   username: string;
   roles: string[];
   permissions: string[];
 }
 
-// Personas
+// ======== Personas ========
 export interface Persona {
   id: string;
   first_name: string;
@@ -32,10 +33,10 @@ export interface Persona {
   activo: boolean;
   created_at: string;
   updated_at?: string;
-  user?: User;
+  user?: UserRef;
 }
 
-export interface User {
+export interface UserRef {
   id: string;
   username: string;
   is_active: boolean;
@@ -52,7 +53,7 @@ export interface CreatePersonaRequest {
   address?: string;
 }
 
-// Zonas
+// ======== Zonas ========
 export type TipoZona = 'VIP' | 'REGULAR' | 'INTERNA' | 'EXTERNA' | 'PREFERENCIAL';
 
 export interface Zona {
@@ -61,7 +62,7 @@ export interface Zona {
   capacidad: number;
   codigo: string;
   descripcion?: string;
-  estado: number;
+  estado: number;       // 1 = activa, 0 = inactiva
   tipo: TipoZona;
   fechaCreacion: string;
   fechaModificacion?: string;
@@ -75,7 +76,7 @@ export interface CreateZonaRequest {
   capacidad: number;
 }
 
-// Espacios
+// ======== Espacios ========
 export type EstadoEspacio = 'DISPONIBLE' | 'OCUPADO' | 'INACTIVO';
 export type TipoEspacio = 'AUTO' | 'MOTO' | 'BUSETA';
 
@@ -98,7 +99,7 @@ export interface CreateEspacioRequest {
   tipo: TipoEspacio;
 }
 
-// Tickets
+// ======== Tickets ========
 export type EstadoTicket = 'activo' | 'pagado' | 'anulado';
 
 export interface Ticket {
@@ -119,12 +120,12 @@ export interface Ticket {
 
 export interface CreateTicketRequest {
   id_espacio: string;
-  id_usuario: string;
   placa: string;
 }
 
-// Vehiculos
+// ======== Vehiculos ========
 export type TipoVehiculo = 'Auto' | 'Motocicleta' | 'Camioneta';
+export type Clasificacion = 'Electrico' | 'Gasolina' | 'Diesel' | 'Hibrido';
 
 export interface Vehiculo {
   id: string;
@@ -157,18 +158,18 @@ export interface CreateVehiculoRequest {
   };
 }
 
-// Roles
+// ======== Roles ========
 export interface Role {
   id: string;
   name: string;
   description: string;
+  is_active: boolean;
 }
 
-// SSE Events
-export interface SSEEvent {
-  type: string;
-  data: {
-    id_espacio: string;
-    estado: string;
-  };
+export interface RoleUser {
+  id_user: string;
+  id_role: string;
+  active: boolean;
+  role?: Role;
+  user?: UserRef;
 }

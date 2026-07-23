@@ -1,37 +1,61 @@
 import { useEffect, useState } from 'react';
-import { personasApi } from '../api';
-import { useAuth } from '../context/AuthContext';
+import { personasApi, rolesApi, roleUsersApi } from '../api';
 import { useToast } from '../hooks/useToast';
-import type { Persona, CreatePersonaRequest } from '../types';
+import type { Persona, Role } from '../types';
+
+interface UserWithRoles extends Persona {
+  assignedRoles: { roleName: string; roleId: string; active: boolean }[];
+}
+
+const ASSIGNABLE_ROLES = ['CLIENTE', 'RECAUDADOR', 'ADMIN', 'ROOT'];
 
 export default function UsuariosPage() {
-  const { hasPermission } = useAuth();
   const { addToast, ToastContainer } = useToast();
-  const [personas, setPersonas] = useState<Persona[]>([]);
+  const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState<CreatePersonaRequest>({ firstName: '', lastName: '', dni: '', email: '', phone: '', nationality: 'Ecuatoriano' });
+  const [showRoleModal, setShowRoleModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [selectedRole, setSelectedRole] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
-  useEffect(() => { loadPersonas(); }, []);
+  useEffect(() => { loadData(); }, []);
 
-  const loadPersonas = async () => {
+  const loadData = async () => {
     try {
-      const data = await personasApi.getAll();
-      setPersonas(data);
-    } catch { /* ignore */ }
+      const [personas, allRoles, allRoleUsers] = await Promise.all([
+        personasApi.getAll(),
+        rolesApi.getAll(),
+        roleUsersApi.getAll() as Promise<{ id_user: string; id_role: string; active: boolean; role: { name: string; id: string } }[]>,
+      ]);
+      setRoles(allRoles);
+
+      const enriched: UserWithRoles[] = personas.map(p => ({
+        ...p,
+        assignedRoles: allRoleUsers
+          .filter(ru => p.user && ru.id_user === p.user.id)
+          .map(ru => ({ roleName: ru.role?.name || '?', roleId: ru.id_role, active: ru.active })),
+      }));
+      setUsers(enriched);
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : 'Error cargando usuarios', 'error');
+    }
     setLoading(false);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleAssignRole = async () => {
+    if (!selectedUser?.user || !selectedRole) return;
+    setAssigning(true);
     try {
-      const res = await personasApi.create(form);
-      addToast(`Persona creada. Usuario: ${res.user.username}`, 'success');
-      setShowModal(false);
-      setForm({ firstName: '', lastName: '', dni: '', email: '', phone: '', nationality: 'Ecuatoriano' });
-      loadPersonas();
+      await roleUsersApi.assign(selectedUser.user.id, selectedRole);
+      addToast(`Rol ${selectedRole} asignado a ${selectedUser.first_name}`, 'success');
+      setShowRoleModal(false);
+      setSelectedRole('');
+      await loadData();
     } catch (err: unknown) {
-      addToast(err instanceof Error ? err.message : 'Error', 'error');
+      addToast(err instanceof Error ? err.message : 'Error al asignar rol', 'error');
+    } finally {
+      setAssigning(false);
     }
   };
 
@@ -39,122 +63,153 @@ export default function UsuariosPage() {
     try {
       if (persona.activo) {
         await personasApi.deactivate(persona.id);
-        addToast('Persona desactivada', 'success');
+        addToast(`${persona.first_name} desactivado`, 'info');
       } else {
         await personasApi.activate(persona.id);
-        addToast('Persona activada', 'success');
+        addToast(`${persona.first_name} activado`, 'success');
       }
-      loadPersonas();
+      await loadData();
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : 'Error', 'error');
     }
   };
 
-  if (loading) return <div className="loading-page"><div className="spinner" /></div>;
+  const getRoleChipClass = (roleName: string) => {
+    switch (roleName.toUpperCase()) {
+      case 'ROOT': return 'root';
+      case 'ADMIN': return 'admin';
+      case 'RECAUDADOR': return 'recaudador';
+      default: return 'cliente';
+    }
+  };
+
+  if (loading) return <div className="loading-page"><div className="spinner" /><span>Cargando usuarios...</span></div>;
 
   return (
     <div>
       <ToastContainer />
       <div className="page-header">
         <div>
-          <h1 className="page-title">Usuarios</h1>
-          <p className="page-subtitle">Gestión de personas y cuentas</p>
+          <h1 className="page-title">Gestión de Usuarios</h1>
+          <p className="page-subtitle">Administra usuarios y asigna roles</p>
         </div>
-        {hasPermission('USUARIOS_CREATE') && (
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Nueva Persona</button>
-        )}
+        <span className="badge badge-neutral">{users.length} usuarios</span>
+      </div>
+
+      {/* Stats */}
+      <div className="stats-grid" style={{ marginBottom: '1rem' }}>
+        {['ROOT', 'ADMIN', 'RECAUDADOR', 'CLIENTE'].map(role => {
+          const count = users.filter(u => u.assignedRoles.some(r => r.roleName === role && r.active)).length;
+          const icons: Record<string, string> = { ROOT: '🔑', ADMIN: '⚙️', RECAUDADOR: '💰', CLIENTE: '👤' };
+          const colors: Record<string, string> = { ROOT: 'red', ADMIN: 'yellow', RECAUDADOR: 'purple', CLIENTE: 'blue' };
+          return (
+            <div key={role} className="card stat-card">
+              <div className={`stat-icon ${colors[role]}`}>{icons[role]}</div>
+              <div><div className="stat-value">{count}</div><div className="stat-label">{role}</div></div>
+            </div>
+          );
+        })}
       </div>
 
       <div className="card">
         <div className="card-header">
-          <span className="card-title">Personas Registradas ({personas.length})</span>
+          <span className="card-title">Todos los Usuarios</span>
         </div>
-        {personas.length === 0 ? (
-          <p style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '2rem' }}>No hay personas registradas.</p>
-        ) : (
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Nombre</th>
-                  <th>DNI</th>
-                  <th>Email</th>
-                  <th>Teléfono</th>
-                  <th>Usuario</th>
-                  <th>Estado</th>
-                  {hasPermission('USUARIOS_UPDATE') && <th>Acciones</th>}
+        <div className="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Nombre</th>
+                <th>Usuario</th>
+                <th>DNI</th>
+                <th>Email</th>
+                <th>Roles</th>
+                <th>Estado</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map(u => (
+                <tr key={u.id}>
+                  <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{u.first_name} {u.last_name}</td>
+                  <td><span style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>{u.user?.username || '—'}</span></td>
+                  <td>{u.dni}</td>
+                  <td style={{ fontSize: '0.78rem' }}>{u.email}</td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                      {u.assignedRoles.filter(r => r.active).map(r => (
+                        <span key={r.roleId} className={`role-chip ${getRoleChipClass(r.roleName)}`}>
+                          {r.roleName}
+                        </span>
+                      ))}
+                      {u.assignedRoles.filter(r => r.active).length === 0 && (
+                        <span className="badge badge-neutral">Sin rol</span>
+                      )}
+                    </div>
+                  </td>
+                  <td>
+                    <span className={`badge ${u.activo ? 'badge-success' : 'badge-danger'}`}>
+                      {u.activo ? 'Activo' : 'Inactivo'}
+                    </span>
+                  </td>
+                  <td>
+                    <div style={{ display: 'flex', gap: '0.3rem' }}>
+                      <button
+                        className="btn btn-xs btn-primary"
+                        onClick={() => { setSelectedUser(u); setShowRoleModal(true); setSelectedRole(''); }}
+                        title="Asignar rol"
+                      >
+                        🏷️ Rol
+                      </button>
+                      <button
+                        className={`btn btn-xs ${u.activo ? 'btn-danger' : 'btn-success'}`}
+                        onClick={() => handleToggleActive(u)}
+                      >
+                        {u.activo ? 'Desactivar' : 'Activar'}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {personas.map(p => (
-                  <tr key={p.id}>
-                    <td style={{ color: 'var(--text-primary)', fontWeight: 500 }}>{p.first_name} {p.last_name}</td>
-                    <td>{p.dni}</td>
-                    <td>{p.email}</td>
-                    <td>{p.phone}</td>
-                    <td><span className="badge badge-info">{p.user?.username || '—'}</span></td>
-                    <td>
-                      <span className={`badge ${p.activo ? 'badge-success' : 'badge-danger'}`}>
-                        {p.activo ? 'Activo' : 'Inactivo'}
-                      </span>
-                    </td>
-                    {hasPermission('USUARIOS_UPDATE') && (
-                      <td>
-                        <button
-                          className={`btn btn-sm ${p.activo ? 'btn-danger' : 'btn-success'}`}
-                          onClick={() => handleToggleActive(p)}
-                        >
-                          {p.activo ? 'Desactivar' : 'Activar'}
-                        </button>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* Create Modal */}
-      {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+      {/* Role Assignment Modal */}
+      {showRoleModal && selectedUser && (
+        <div className="modal-overlay" onClick={() => setShowRoleModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2 className="modal-title">Registrar Persona</h2>
-            <form onSubmit={handleCreate}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Nombre</label>
-                  <input value={form.firstName} onChange={e => setForm({ ...form, firstName: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Apellido</label>
-                  <input value={form.lastName} onChange={e => setForm({ ...form, lastName: e.target.value })} required />
-                </div>
+            <h2 className="modal-title">🏷️ Asignar Rol</h2>
+            <div style={{ padding: '0.75rem', background: 'var(--bg-input)', borderRadius: 'var(--radius-sm)', marginBottom: '1rem' }}>
+              <div style={{ fontWeight: 600, marginBottom: '0.25rem' }}>{selectedUser.first_name} {selectedUser.last_name}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                Usuario: {selectedUser.user?.username} · DNI: {selectedUser.dni}
               </div>
-              <div className="form-group">
-                <label className="form-label">Cédula (DNI)</label>
-                <input value={form.dni} onChange={e => setForm({ ...form, dni: e.target.value })} maxLength={10} required />
+              <div style={{ marginTop: '0.35rem', display: 'flex', gap: '0.25rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Roles actuales:</span>
+                {selectedUser.assignedRoles.filter(r => r.active).map(r => (
+                  <span key={r.roleId} className={`role-chip ${getRoleChipClass(r.roleName)}`}>{r.roleName}</span>
+                ))}
               </div>
-              <div className="form-group">
-                <label className="form-label">Email</label>
-                <input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' }}>
-                <div className="form-group">
-                  <label className="form-label">Teléfono</label>
-                  <input value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} required />
-                </div>
-                <div className="form-group">
-                  <label className="form-label">Nacionalidad</label>
-                  <input value={form.nationality} onChange={e => setForm({ ...form, nationality: e.target.value })} required />
-                </div>
-              </div>
-              <div className="form-actions">
-                <button type="button" className="btn btn-ghost" onClick={() => setShowModal(false)}>Cancelar</button>
-                <button type="submit" className="btn btn-primary">Registrar</button>
-              </div>
-            </form>
+            </div>
+            <div className="form-group">
+              <label className="form-label">Seleccionar nuevo rol</label>
+              <select value={selectedRole} onChange={e => setSelectedRole(e.target.value)}>
+                <option value="">Elegir rol...</option>
+                {ASSIGNABLE_ROLES.map(r => (
+                  <option key={r} value={r} disabled={selectedUser.assignedRoles.some(ar => ar.roleName === r && ar.active)}>
+                    {r} {selectedUser.assignedRoles.some(ar => ar.roleName === r && ar.active) ? '(ya asignado)' : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="form-actions">
+              <button className="btn btn-ghost" onClick={() => setShowRoleModal(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={handleAssignRole} disabled={!selectedRole || assigning}>
+                {assigning ? 'Asignando...' : 'Asignar Rol'}
+              </button>
+            </div>
           </div>
         </div>
       )}

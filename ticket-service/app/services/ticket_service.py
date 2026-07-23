@@ -77,6 +77,8 @@ class TicketService:
             raise EstadoInvalidoException("El espacio seleccionado es para MOTOS, pero el vehículo ingresado no es una moto.")
         if tipo_espacio == "AUTO" and categoria_vehiculo != CategoriaVehiculo.AUTO_CAMIONETA:
             raise EstadoInvalidoException("El espacio seleccionado es para AUTOS, pero el vehículo ingresado no es un auto/camioneta.")
+        if tipo_espacio == "BUSETA" and str(tipo).upper() != "BUSETA":
+            raise EstadoInvalidoException("El espacio seleccionado es para BUSETAS, pero el vehículo ingresado no es una buseta.")
 
         # Inferir usuario a partir del vehículo o de asignaciones_client
         id_usuario = None

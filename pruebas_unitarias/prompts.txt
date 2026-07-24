@@ -1,0 +1,9 @@
+---- Zonas -----
+Con base en el archivo @/puebas_unitarias/cp_zonas.txt, crea un archivo que implemente pruebas unitarias Junit que permitan probar desde un punto de vista REST, no desde servicios. 
+Considera los siguientes aspectos:
+- Como los endpoints están protegidos por JWT, puedes trabajar con un mock que cuente con los permisos necesarios, para que el control pase.
+- Puedes guiarte por los archivos de dto en la carpeta @ModuloZonas/src/main/java/ec/edu/espe/zonas/datos/dtos, los archivos de entidad en @ModuloZonas/src/main/java/ec/edu/espe/zonas/dominio/entidades y por los servicios en la carpeta @ModuloZonas/src/main/java/ec/edu/espe/zonas/servicios/implementacion para entender las validaciones, mensajes de error y lógica que manejan, pero no puedes modificarlos. 
+- Puedes usar funciones que llamen a los servicios para acciones que formen parte de las verificaciones o Precondiciones, como crear zonas o hacer una búsqueda.
+- Si es necesario agregar dependencias al @ModuloZonas/pom.xml puedes hacerlo, pero no puedes manipular dependencias ya existentes. Tampoco puedes modificar otros archivos fuera de la carpeta @ModuloZonas/src/test/java/ec/edu/espe/zonas
+- Para las pruebas se necesita de una base de datos en postgresql, puedes usar el archivo @docker-compose.yml para levantar la base de datos db-zonas y realizar las pruebas. Solo puedes levantar esta base de datos de todo el archivo. 
+- No olvides incluir los casos adicionales o sub-casos de prueba. 
